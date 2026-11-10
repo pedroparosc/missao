@@ -1,6 +1,6 @@
 # Plano de Desenvolvimento — Backend do Verificador de Prestação de Contas
 
-> **Status geral:** 🟡 em andamento · **Última atualização:** 10/11/2026
+> **Status geral:** ✅ concluído (45/45) · **Última atualização:** 10/11/2026
 >
 > Marque `[x]` ao concluir cada tarefa. Cada tarefa tem um **critério de verificação** (✔) que diz
 > como comprovar que ela está pronta. O progresso de cada fase é atualizado na tabela abaixo.
@@ -16,8 +16,8 @@
 | 4 | Testes automatizados | 1,5 dia | 6/6 | ✅ |
 | 5 | Integração com o frontend Streamlit | 1 dia | 4/4 | ✅ |
 | 6 | Documentação | 0,5 dia | 5/5 | ✅ |
-| 7 | Deploy, CI e GitHub | 1 dia | 4/6 | 🟡 |
-| **Total** | | **8,5 dias úteis** (≈ 2 semanas, 1 desenvolvedor) | **43/45** | |
+| 7 | Deploy, CI e GitHub | 1 dia | 6/6 | ✅ |
+| **Total** | | **8,5 dias úteis** (≈ 2 semanas, 1 desenvolvedor) | **45/45** | ✅ |
 
 ---
 
@@ -238,8 +238,8 @@ sequenceDiagram
 - [x] **7.1** `Dockerfile` (multi-stage, usuário não-root, `HEALTHCHECK`). ✔ Build no CI.
 - [x] **7.2** `docker-compose.yml` (API + frontend, volume persistente `data/`). ✔ `docker compose config` válido.
 - [x] **7.3** `executar_api.bat` para rodar a API localmente no Windows. ✔ Sobe em `http://localhost:8000/docs`.
-- [ ] **7.4** GitHub Actions: testes (pytest + cobertura) e build da imagem. ✔ Workflow verde no GitHub.
-- [ ] **7.5** Repositório local versionado com git e enviado ao `pedroparosc/missao`, preservando o histórico remoto. ✔ `git log` mostra o commit remoto original + os novos.
+- [x] **7.4** GitHub Actions: testes (pytest + cobertura) e build da imagem. ✔ Workflow verde no GitHub.
+- [x] **7.5** Repositório local versionado com git e enviado ao `pedroparosc/missao`, preservando o histórico remoto. ✔ `git log` mostra o commit remoto original + os novos.
 - [x] **7.6** `docs/DEPLOY.md` com o passo a passo de deploy (Docker em VM e serviços PaaS). ✔ Arquivo publicado.
 
 ---
@@ -318,3 +318,4 @@ flowchart TD
 | 10/11/2026 | Criação do plano. |
 | 10/11/2026 | Fases 1–6 concluídas. Ajustes feitos durante a implementação: (a) campos de upload declarados como lista para rejeitar vários arquivos em campo único (antes o FastAPI descartava os extras sem avisar); (b) serialização trata o `NaN` que o pandas 3 coloca no lugar de `None` em colunas de texto; (c) painel de histórico também na tela inicial do Streamlit. |
 | 10/11/2026 | 7.1–7.3 e 7.6 concluídas. O build do Dockerfile é validado no CI (Docker não está instalado na máquina local). |
+| 10/11/2026 | 7.4 e 7.5 concluídas: projeto enviado ao `pedroparosc/missao` sobre o commit original (`4141b03` → `5a9c4b7`). CI verde: testes em Python 3.11/3.12/3.13 e build + smoke test da imagem Docker, o que também valida 7.1 e 7.2. |
