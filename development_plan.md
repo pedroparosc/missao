@@ -257,7 +257,7 @@ sequenceDiagram
 - [x] **8.6** Botão "Carregar documentos de exemplo" (arquivos servidos em `/exemplos/`). ✔ `test_exemplos_servidos_para_o_botao_do_frontend`.
 - [x] **8.7** Montagem estática na raiz não esconde `/api`, `/docs` e `/openapi.json`. ✔ `test_frontend_web_servido_na_raiz`.
 - [x] **8.8** Layout responsivo (celular 375 px sem rolagem horizontal) e tema escuro automático. ✔ Verificado no navegador.
-- [x] **8.9** CI: job `testes-postgres` (suíte inteira contra PostgreSQL 16). ✔ Job verde no GitHub Actions.
+- [x] **8.9** CI: job `testes-postgres` (suíte inteira contra PostgreSQL 16). ✔ Job verde no GitHub Actions. *(run do commit `b13970f`: os 6 jobs verdes.)*
 - [x] **8.10** CI: job `vercel-simulado` (instala só o `pyproject.toml`, sobe `index:app` com `VERCEL=1` + PostgreSQL e cria uma análise). ✔ Job verde no GitHub Actions.
 - [x] **8.11** `docs/DEPLOY_VERCEL.md`: passo a passo no painel e pela CLI, Neon, região, variáveis, limites, problemas comuns e checklist do dia. ✔ Arquivo publicado.
 - [x] **8.12** Documentação atualizada (README, API, ARQUITETURA, DEPLOY, manual) e `docs/openapi.json` 1.1.0. ✔ `test_docs_api_cobre_todas_as_rotas`.
