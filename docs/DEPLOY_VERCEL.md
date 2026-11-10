@@ -44,10 +44,23 @@ e um PostgreSQL, e cria uma análise com os arquivos de exemplo.
 2. Autorize o app da Vercel a acessar o repositório `pedroparosc/missao`. Pode ser só esse repositório.
 
 ### 2. Importar o projeto
+
+> **Pré-requisitos que a Vercel cobra antes de importar.** Na primeira vez, ela recusa o vínculo com
+> uma destas mensagens. Resolva cada uma assim:
+> - *"You need to add a Login Connection to your GitHub account first"*: em **Account Settings →
+>   Authentication → Sign-in Methods**, clique em **Connect** na linha **GitHub**.
+> - *"To link a GitHub repository, you need to install the GitHub integration first"*: instale o app
+>   em <https://github.com/apps/vercel/installations/new>, com **Only select repositories → `pedroparosc/missao`**.
+> - *"Multiple applications detected… Services"*: a Vercel encontra duas aplicações FastAPI
+>   (`verificador` e `app` em `/`). Clique em **Import single project** na aplicação **`app`**, que fica na raiz `/`.
+>
+> Se a tela de importação ficar em "Deploying/Loading…" e nenhum deploy aparecer em **Deployments**,
+> o projeto já foi criado e conectado ao Git. Basta fazer um push na `main` para disparar o deploy de produção.
+
 1. No painel, clique em **Add New… → Project**.
 2. Em **Import Git Repository**, escolha `pedroparosc/missao` e clique em **Import**.
 3. Na tela **Configure Project**:
-   - **Framework Preset:** `FastAPI` (detectado sozinho pelo `pyproject.toml`).
+   - **Framework Preset:** `FastAPI`. Se aparecer `Other` ou `Services`, escolha **FastAPI** ou a aplicação `app` em `/`.
    - **Root Directory:** `./` (raiz, não mude).
    - **Build and Output Settings:** deixe o padrão.
    - **Environment Variables:** nenhuma por enquanto.
