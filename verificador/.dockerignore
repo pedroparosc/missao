@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+data/
+tests/
+.venv/
+venv/
+*.bat
+relatorio_prestacao_contas.*

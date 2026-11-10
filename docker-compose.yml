@@ -1,0 +1,45 @@
+# Sobe a API (porta 8000) e o frontend Streamlit (porta 8501) já integrado à API.
+#
+#   docker compose up -d --build
+#   API:      http://localhost:8000/docs
+#   Frontend: http://localhost:8501
+#
+# Em produção, defina VERIFICADOR_API_KEY (ex.: em um arquivo .env ao lado deste) para
+# exigir a chave de API; o frontend recebe a mesma chave automaticamente.
+
+services:
+  api:
+    build: ./verificador
+    image: verificador-prestacao:latest
+    ports:
+      - "8000:8000"
+    environment:
+      VERIFICADOR_API_KEY: ${VERIFICADOR_API_KEY:-}
+      VERIFICADOR_CORS_ORIGINS: ${VERIFICADOR_CORS_ORIGINS:-http://localhost:8501}
+      VERIFICADOR_MAX_UPLOAD_MB: ${VERIFICADOR_MAX_UPLOAD_MB:-25}
+    volumes:
+      - dados:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./verificador
+    image: verificador-prestacao:latest
+    command: ["streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0",
+              "--server.headless", "true", "--browser.gatherUsageStats", "false"]
+    ports:
+      - "8501:8501"
+    environment:
+      VERIFICADOR_API_URL: http://api:8000
+      VERIFICADOR_API_KEY: ${VERIFICADOR_API_KEY:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  dados:

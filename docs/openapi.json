@@ -1,0 +1,1946 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Verificador de Prestação de Contas — API",
+    "description": "\nAPI do **Verificador de Prestação de Contas**: recebe extratos, planilhas, notas e o arquivo\n“projeto - [nome]”, executa os Passos 1 a 4 da verificação contábil e gera o relatório descritivo.\n\n* Autenticação: cabeçalho `X-API-Key` quando `VERIFICADOR_API_KEY` estiver configurada.\n* Erros seguem o formato `{\"detail\": ...}`.\n* A consulta de autenticidade das notas (SEFAZ/Prefeitura) exige captcha e **não** é automatizada:\n  a API devolve um checklist com os links para conferência manual.\n",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/saude": {
+      "get": {
+        "tags": [
+          "sistema"
+        ],
+        "summary": "Saúde do serviço",
+        "description": "Usado por healthchecks (Docker/PaaS). Público: não exige chave de API.",
+        "operationId": "saude_api_v1_saude_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saude"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parametros": {
+      "get": {
+        "tags": [
+          "sistema"
+        ],
+        "summary": "Parâmetros padrão e campos de upload",
+        "description": "Valores padrão da barra lateral do frontend e as extensões aceitas em cada campo de upload.",
+        "operationId": "parametros_api_v1_parametros_get",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParametrosPadrao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analises": {
+      "post": {
+        "tags": [
+          "análises"
+        ],
+        "summary": "Criar análise (enviar documentos)",
+        "description": "Recebe os documentos (multipart/form-data), executa a verificação e salva a análise.\n\nNome, CNPJ e vigência não informados são extraídos do arquivo do projeto.\nÉ obrigatório enviar ao menos um extrato ou a planilha de gastos.",
+        "operationId": "criar_analise_api_v1_analises_post",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_criar_analise_api_v1_analises_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnaliseDetalhe"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "análises"
+        ],
+        "summary": "Listar análises (histórico)",
+        "description": "Análises mais recentes primeiro, com os totais do resumo e a contagem de erros/alertas.",
+        "operationId": "listar_analises_api_v1_analises_get",
+        "parameters": [
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "deslocamento",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Deslocamento"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaAnalises"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analises/{analise_id}": {
+      "get": {
+        "tags": [
+          "análises"
+        ],
+        "summary": "Detalhar análise",
+        "description": "Resultado completo: resumo, ocorrências, entradas SMF, conciliação, previsto x executado,\nchecklist manual, avisos de leitura, arquivos e dados lidos.",
+        "operationId": "obter_analise_api_v1_analises__analise_id__get",
+        "parameters": [
+          {
+            "name": "analise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analise Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnaliseDetalhe"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "análises"
+        ],
+        "summary": "Excluir análise",
+        "description": "Remove a análise, seus registros e os arquivos originais guardados.",
+        "operationId": "excluir_analise_api_v1_analises__analise_id__delete",
+        "parameters": [
+          {
+            "name": "analise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analise Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analises/{analise_id}/lancamentos": {
+      "get": {
+        "tags": [
+          "análises"
+        ],
+        "summary": "Lançamentos classificados",
+        "description": "Lançamentos dos extratos com a classificação atual (aba “Lançamentos (revisar)”).",
+        "operationId": "obter_lancamentos_api_v1_analises__analise_id__lancamentos_get",
+        "parameters": [
+          {
+            "name": "analise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analise Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lancamentos"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "análises"
+        ],
+        "summary": "Corrigir lançamentos e recalcular",
+        "description": "Substitui os lançamentos de uma ou das duas contas (classificação, valores lidos errado do PDF,\nlinhas incluídas/removidas) e refaz a verificação. Conta omitida (`null`) não é alterada.",
+        "operationId": "atualizar_lancamentos_api_v1_analises__analise_id__lancamentos_put",
+        "parameters": [
+          {
+            "name": "analise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analise Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Lancamentos"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnaliseDetalhe"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analises/{analise_id}/parametros": {
+      "patch": {
+        "tags": [
+          "análises"
+        ],
+        "summary": "Alterar parâmetros e recalcular",
+        "description": "Atualização parcial dos parâmetros. Enviar `palavras_smf` reclassifica os lançamentos.",
+        "operationId": "atualizar_parametros_api_v1_analises__analise_id__parametros_patch",
+        "parameters": [
+          {
+            "name": "analise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analise Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParametrosAtualizacao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnaliseDetalhe"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analises/{analise_id}/relatorio.docx": {
+      "get": {
+        "tags": [
+          "análises"
+        ],
+        "summary": "Baixar relatório (Word)",
+        "description": "Relatório descritivo da prestação de contas em Word (.docx).",
+        "operationId": "relatorio_docx_api_v1_analises__analise_id__relatorio_docx_get",
+        "parameters": [
+          {
+            "name": "analise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analise Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analises/{analise_id}/relatorio.md": {
+      "get": {
+        "tags": [
+          "análises"
+        ],
+        "summary": "Baixar relatório (Markdown)",
+        "description": "Relatório descritivo da prestação de contas em Markdown.",
+        "operationId": "relatorio_md_api_v1_analises__analise_id__relatorio_md_get",
+        "parameters": [
+          {
+            "name": "analise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analise Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/markdown": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnaliseDetalhe": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "title": "Atualizado Em"
+          },
+          "parametros": {
+            "$ref": "#/components/schemas/ParametrosAnalise"
+          },
+          "resumo": {
+            "$ref": "#/components/schemas/Resumo"
+          },
+          "contas_corrente": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contas Corrente"
+          },
+          "contas_investimento": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contas Investimento"
+          },
+          "ocorrencias": {
+            "items": {
+              "$ref": "#/components/schemas/Ocorrencia"
+            },
+            "type": "array",
+            "title": "Ocorrencias"
+          },
+          "entradas_smf": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Entradas Smf"
+          },
+          "conciliacao": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Conciliacao"
+          },
+          "previsto_executado": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Previsto Executado"
+          },
+          "checklist_manual": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Checklist Manual"
+          },
+          "avisos_leitura": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Avisos Leitura"
+          },
+          "arquivos": {
+            "items": {
+              "$ref": "#/components/schemas/Arquivo"
+            },
+            "type": "array",
+            "title": "Arquivos"
+          },
+          "projeto": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjetoLido"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dados_lidos": {
+            "$ref": "#/components/schemas/DadosLidos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "criado_em",
+          "atualizado_em",
+          "parametros",
+          "resumo",
+          "contas_corrente",
+          "contas_investimento",
+          "ocorrencias",
+          "entradas_smf",
+          "conciliacao",
+          "previsto_executado",
+          "checklist_manual",
+          "avisos_leitura",
+          "arquivos",
+          "projeto",
+          "dados_lidos"
+        ],
+        "title": "AnaliseDetalhe",
+        "description": "Resultado completo de uma análise — tudo que as abas do frontend exibem."
+      },
+      "AnaliseResumo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "criado_em": {
+            "type": "string",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "title": "Atualizado Em"
+          },
+          "nome_projeto": {
+            "type": "string",
+            "title": "Nome Projeto"
+          },
+          "cnpj_entidade": {
+            "type": "string",
+            "title": "Cnpj Entidade"
+          },
+          "total_smf": {
+            "type": "number",
+            "title": "Total Smf"
+          },
+          "total_gasto": {
+            "type": "number",
+            "title": "Total Gasto"
+          },
+          "total_rendimentos": {
+            "type": "number",
+            "title": "Total Rendimentos"
+          },
+          "diferenca": {
+            "type": "number",
+            "title": "Diferenca"
+          },
+          "n_erros": {
+            "type": "integer",
+            "title": "N Erros"
+          },
+          "n_alertas": {
+            "type": "integer",
+            "title": "N Alertas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "criado_em",
+          "atualizado_em",
+          "nome_projeto",
+          "cnpj_entidade",
+          "total_smf",
+          "total_gasto",
+          "total_rendimentos",
+          "diferenca",
+          "n_erros",
+          "n_alertas"
+        ],
+        "title": "AnaliseResumo",
+        "description": "Item da listagem de análises (histórico)."
+      },
+      "Arquivo": {
+        "properties": {
+          "campo": {
+            "type": "string",
+            "title": "Campo"
+          },
+          "nome_original": {
+            "type": "string",
+            "title": "Nome Original"
+          },
+          "tamanho": {
+            "type": "integer",
+            "title": "Tamanho"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campo",
+          "nome_original",
+          "tamanho",
+          "sha256"
+        ],
+        "title": "Arquivo"
+      },
+      "Body_criar_analise_api_v1_analises_post": {
+        "properties": {
+          "projeto": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "contentMediaType": "application/octet-stream"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projeto",
+            "description": "Arquivo “projeto - [nome]” (um)"
+          },
+          "extratos_corrente": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "contentMediaType": "application/octet-stream"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extratos Corrente",
+            "description": "Extratos da conta corrente (vários)"
+          },
+          "extratos_investimento": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "contentMediaType": "application/octet-stream"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extratos Investimento",
+            "description": "Extratos da conta investimento (vários)"
+          },
+          "planilha_gastos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "contentMediaType": "application/octet-stream"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planilha Gastos",
+            "description": "Planilha de gastos (um)"
+          },
+          "planilha_previsto": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "contentMediaType": "application/octet-stream"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planilha Previsto",
+            "description": "Previsto x executado (um)"
+          },
+          "planilha_rendimentos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "contentMediaType": "application/octet-stream"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planilha Rendimentos",
+            "description": "Rendimentos (um)"
+          },
+          "notas_fiscais": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "contentMediaType": "application/octet-stream"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notas Fiscais",
+            "description": "Notas fiscais (vários)"
+          },
+          "nome_projeto": {
+            "type": "string",
+            "title": "Nome Projeto",
+            "default": ""
+          },
+          "cnpj_entidade": {
+            "type": "string",
+            "title": "Cnpj Entidade",
+            "default": ""
+          },
+          "inicio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inicio",
+            "description": "AAAA-MM-DD ou DD/MM/AAAA"
+          },
+          "fim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fim",
+            "description": "AAAA-MM-DD ou DD/MM/AAAA"
+          },
+          "tolerancia_dias": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 0.0,
+            "title": "Tolerancia Dias",
+            "default": 5
+          },
+          "max_entradas_smf": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Max Entradas Smf",
+            "default": 3
+          },
+          "palavras_smf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Palavras Smf",
+            "description": "Uma palavra-chave por linha (vazio = padrão)"
+          },
+          "lancamentos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lancamentos",
+            "description": "JSON opcional {corrente:[...], investimento:[...]} com a classificação já revisada"
+          }
+        },
+        "type": "object",
+        "title": "Body_criar_analise_api_v1_analises_post"
+      },
+      "CampoArquivo": {
+        "properties": {
+          "extensoes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Extensoes"
+          },
+          "multiplo": {
+            "type": "boolean",
+            "title": "Multiplo",
+            "description": "Aceita vários arquivos no mesmo campo."
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "extensoes",
+          "multiplo",
+          "descricao"
+        ],
+        "title": "CampoArquivo"
+      },
+      "DadosLidos": {
+        "properties": {
+          "gastos": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Gastos"
+          },
+          "previsto": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Previsto"
+          },
+          "rendimentos": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rendimentos"
+          },
+          "notas": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Notas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "gastos",
+          "previsto",
+          "rendimentos",
+          "notas"
+        ],
+        "title": "DadosLidos",
+        "description": "Tabelas lidas das planilhas e notas (aba \"Dados lidos\" do frontend)."
+      },
+      "Erro": {
+        "properties": {
+          "detail": {
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "Erro",
+        "description": "Formato padrão de erro."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Lancamento": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao",
+            "default": ""
+          },
+          "documento": {
+            "type": "string",
+            "title": "Documento",
+            "default": ""
+          },
+          "valor": {
+            "type": "number",
+            "title": "Valor",
+            "description": "+crédito / −débito"
+          },
+          "saldo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saldo"
+          },
+          "conta": {
+            "type": "string",
+            "title": "Conta",
+            "default": ""
+          },
+          "arquivo": {
+            "type": "string",
+            "title": "Arquivo",
+            "default": ""
+          },
+          "classificacao": {
+            "type": "string",
+            "title": "Classificacao",
+            "description": "Uma das classificações de /parametros.",
+            "default": "Gasto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "valor"
+        ],
+        "title": "Lancamento",
+        "description": "Um lançamento de extrato bancário (crédito positivo, débito negativo)."
+      },
+      "Lancamentos": {
+        "properties": {
+          "corrente": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Lancamento"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrente"
+          },
+          "investimento": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Lancamento"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investimento"
+          }
+        },
+        "type": "object",
+        "title": "Lancamentos",
+        "description": "Lançamentos das duas contas. Na atualização (PUT), uma conta omitida (null) não muda."
+      },
+      "ListaAnalises": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/AnaliseResumo"
+            },
+            "type": "array",
+            "title": "Itens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "itens"
+        ],
+        "title": "ListaAnalises"
+      },
+      "Ocorrencia": {
+        "properties": {
+          "gravidade": {
+            "type": "string",
+            "enum": [
+              "Erro",
+              "Alerta",
+              "Informação"
+            ],
+            "title": "Gravidade"
+          },
+          "categoria": {
+            "type": "string",
+            "title": "Categoria"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "referencia": {
+            "type": "string",
+            "title": "Referencia",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "gravidade",
+          "categoria",
+          "descricao"
+        ],
+        "title": "Ocorrencia"
+      },
+      "ParametrosAnalise": {
+        "properties": {
+          "nome_projeto": {
+            "type": "string",
+            "title": "Nome Projeto",
+            "default": ""
+          },
+          "cnpj_entidade": {
+            "type": "string",
+            "title": "Cnpj Entidade",
+            "default": ""
+          },
+          "inicio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inicio",
+            "description": "Início da vigência (AAAA-MM-DD)."
+          },
+          "fim": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fim",
+            "description": "Fim da vigência (AAAA-MM-DD)."
+          },
+          "palavras_smf": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Palavras Smf",
+            "description": "Trechos do histórico que identificam repasses da SMF."
+          },
+          "tolerancia_dias": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 0.0,
+            "title": "Tolerancia Dias",
+            "description": "Tolerância de datas na conciliação.",
+            "default": 5
+          },
+          "max_entradas_smf": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Max Entradas Smf",
+            "description": "Máximo de entradas da SMF permitido.",
+            "default": 3
+          }
+        },
+        "type": "object",
+        "title": "ParametrosAnalise",
+        "description": "Parâmetros da verificação — equivalem à classe `Config` do núcleo / barra lateral do app."
+      },
+      "ParametrosAtualizacao": {
+        "properties": {
+          "nome_projeto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome Projeto"
+          },
+          "cnpj_entidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cnpj Entidade"
+          },
+          "inicio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inicio"
+          },
+          "fim": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fim"
+          },
+          "palavras_smf": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Palavras Smf"
+          },
+          "tolerancia_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tolerancia Dias"
+          },
+          "max_entradas_smf": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Entradas Smf"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ParametrosAtualizacao",
+        "description": "Atualização parcial dos parâmetros (PATCH). Campos omitidos não mudam.\n\nSe `palavras_smf` for enviado, os lançamentos são **reclassificados** automaticamente,\ndescartando correções manuais de classificação feitas antes."
+      },
+      "ParametrosPadrao": {
+        "properties": {
+          "classificacoes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Classificacoes"
+          },
+          "palavras_smf": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Palavras Smf"
+          },
+          "tolerancia_dias": {
+            "type": "integer",
+            "title": "Tolerancia Dias"
+          },
+          "max_entradas_smf": {
+            "type": "integer",
+            "title": "Max Entradas Smf"
+          },
+          "max_upload_mb": {
+            "type": "integer",
+            "title": "Max Upload Mb"
+          },
+          "campos_arquivo": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CampoArquivo"
+            },
+            "type": "object",
+            "title": "Campos Arquivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "classificacoes",
+          "palavras_smf",
+          "tolerancia_dias",
+          "max_entradas_smf",
+          "max_upload_mb",
+          "campos_arquivo"
+        ],
+        "title": "ParametrosPadrao",
+        "description": "Valores padrão exibidos na barra lateral do frontend."
+      },
+      "ProjetoLido": {
+        "properties": {
+          "arquivo": {
+            "type": "string",
+            "title": "Arquivo"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "cnpjs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cnpjs"
+          },
+          "inicio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inicio"
+          },
+          "fim": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fim"
+          },
+          "valor_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Total"
+          },
+          "menciona_contrapartida": {
+            "type": "boolean",
+            "title": "Menciona Contrapartida"
+          },
+          "rubricas": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rubricas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "arquivo",
+          "nome",
+          "cnpjs",
+          "inicio",
+          "fim",
+          "valor_total",
+          "menciona_contrapartida",
+          "rubricas"
+        ],
+        "title": "ProjetoLido",
+        "description": "O que foi extraído do arquivo \"projeto - [nome]\"."
+      },
+      "Resumo": {
+        "properties": {
+          "total_smf": {
+            "type": "number",
+            "title": "Total Smf"
+          },
+          "n_entradas_smf": {
+            "type": "integer",
+            "title": "N Entradas Smf"
+          },
+          "total_gasto": {
+            "type": "number",
+            "title": "Total Gasto"
+          },
+          "total_rendimentos": {
+            "type": "number",
+            "title": "Total Rendimentos"
+          },
+          "diferenca": {
+            "type": "number",
+            "title": "Diferenca",
+            "description": "Total recebido da SMF − total gasto."
+          },
+          "total_gasto_planilha": {
+            "type": "number",
+            "title": "Total Gasto Planilha"
+          },
+          "total_impostos_invest": {
+            "type": "number",
+            "title": "Total Impostos Invest"
+          },
+          "total_tarifas": {
+            "type": "number",
+            "title": "Total Tarifas"
+          },
+          "saldo_corrente": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saldo Corrente"
+          },
+          "saldo_corrente_origem": {
+            "type": "string",
+            "title": "Saldo Corrente Origem"
+          },
+          "saldo_investimento": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saldo Investimento"
+          },
+          "saldo_investimento_origem": {
+            "type": "string",
+            "title": "Saldo Investimento Origem"
+          },
+          "n_erros": {
+            "type": "integer",
+            "title": "N Erros"
+          },
+          "n_alertas": {
+            "type": "integer",
+            "title": "N Alertas"
+          },
+          "n_informacoes": {
+            "type": "integer",
+            "title": "N Informacoes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_smf",
+          "n_entradas_smf",
+          "total_gasto",
+          "total_rendimentos",
+          "diferenca",
+          "total_gasto_planilha",
+          "total_impostos_invest",
+          "total_tarifas",
+          "saldo_corrente",
+          "saldo_corrente_origem",
+          "saldo_investimento",
+          "saldo_investimento_origem",
+          "n_erros",
+          "n_alertas",
+          "n_informacoes"
+        ],
+        "title": "Resumo",
+        "description": "Números do relatório descritivo (Passo 4 + seção 4 do documento de referência)."
+      },
+      "Saude": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degradado"
+            ],
+            "title": "Status"
+          },
+          "versao": {
+            "type": "string",
+            "title": "Versao"
+          },
+          "banco": {
+            "type": "boolean",
+            "title": "Banco",
+            "description": "True se o SQLite respondeu."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "versao",
+          "banco"
+        ],
+        "title": "Saude",
+        "description": "Estado do serviço (usado por healthchecks de Docker/PaaS)."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "análises",
+      "description": "Criação, revisão e relatórios das análises."
+    },
+    {
+      "name": "sistema",
+      "description": "Saúde e parâmetros padrão."
+    }
+  ]
+}

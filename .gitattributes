@@ -1,0 +1,8 @@
+# Normaliza finais de linha: tudo LF no repositório, exceto scripts do Windows.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.png binary
+*.jpg binary
