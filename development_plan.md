@@ -1,6 +1,6 @@
 # Plano de Desenvolvimento — Backend do Verificador de Prestação de Contas
 
-> **Status geral:** ✅ concluído (45/45) · **Última atualização:** 10/11/2026
+> **Status geral:** 🟡 em andamento (60/64) — fases 0–7 concluídas; fases 8–9 (Vercel e apresentação) em andamento · **Última atualização:** 10/11/2026
 >
 > Marque `[x]` ao concluir cada tarefa. Cada tarefa tem um **critério de verificação** (✔) que diz
 > como comprovar que ela está pronta. O progresso de cada fase é atualizado na tabela abaixo.
@@ -17,7 +17,9 @@
 | 5 | Integração com o frontend Streamlit | 1 dia | 4/4 | ✅ |
 | 6 | Documentação | 0,5 dia | 5/5 | ✅ |
 | 7 | Deploy, CI e GitHub | 1 dia | 6/6 | ✅ |
-| **Total** | | **8,5 dias úteis** (≈ 2 semanas, 1 desenvolvedor) | **45/45** | ✅ |
+| 8 | Deploy na Vercel + frontend web + PostgreSQL | 2 dias | 12/14 | 🟡 |
+| 9 | Apresentação do trabalho (faculdade) | 0,5 dia | 3/5 | 🟡 |
+| **Total** | | **11 dias úteis** (≈ 2,5 semanas, 1 desenvolvedor) | **60/64** | 🟡 |
 
 ---
 
@@ -242,6 +244,33 @@ sequenceDiagram
 - [x] **7.5** Repositório local versionado com git e enviado ao `pedroparosc/missao`, preservando o histórico remoto. ✔ `git log` mostra o commit remoto original + os novos.
 - [x] **7.6** `docs/DEPLOY.md` com o passo a passo de deploy (Docker em VM e serviços PaaS). ✔ Arquivo publicado.
 
+### Fase 8 — Deploy na Vercel + frontend web + PostgreSQL (2 dias)
+
+> Decisões do usuário: frontend **web na própria Vercel** (Streamlit não roda em serverless) e histórico
+> em **PostgreSQL Neon** (plano gratuito pelo Marketplace da Vercel).
+
+- [x] **8.1** Ponto de entrada da Vercel: `index.py` + `pyproject.toml` (`[tool.vercel] entrypoint = "index:app"`, Python 3.12, sem Streamlit) + `vercel.json` (`maxDuration`, `excludeFiles`). ✔ `tests/test_vercel_web.py::test_index_py_exporta_app_fastapi` e `test_pyproject_para_vercel`.
+- [x] **8.2** Configuração ciente da Vercel (`VERCEL=1`): SQLite em `/tmp` sem banco, 4 MB por arquivo, limite de 4,5 MB por envio exposto em `/parametros`. ✔ Testes de configuração.
+- [x] **8.3** `RepositorioPostgres` com a mesma interface do SQLite (arquivos em BYTEA) e escolha por `DATABASE_URL`/`POSTGRES_URL`. ✔ `test_repositorio_postgres_crud` (no CI, com PostgreSQL).
+- [x] **8.4** `/saude` informa `banco_tipo` e `persistente`. ✔ `test_saude`.
+- [x] **8.5** Frontend web (`verificador/web/`: HTML/CSS/JS sem build) servido pela API em `/`: nova análise, resultado, lançamentos com recálculo, conciliação, previsto x executado, verificação manual, dados lidos, parâmetros, histórico, relatórios e exclusão. ✔ Fluxo completo no navegador com `VERCEL=1`: 14 erros → reclassificação → 13 erros; PATCH de vigência; .docx; exclusão.
+- [x] **8.6** Botão "Carregar documentos de exemplo" (arquivos servidos em `/exemplos/`). ✔ `test_exemplos_servidos_para_o_botao_do_frontend`.
+- [x] **8.7** Montagem estática na raiz não esconde `/api`, `/docs` e `/openapi.json`. ✔ `test_frontend_web_servido_na_raiz`.
+- [x] **8.8** Layout responsivo (celular 375 px sem rolagem horizontal) e tema escuro automático. ✔ Verificado no navegador.
+- [x] **8.9** CI: job `testes-postgres` (suíte inteira contra PostgreSQL 16). ✔ Job verde no GitHub Actions.
+- [x] **8.10** CI: job `vercel-simulado` (instala só o `pyproject.toml`, sobe `index:app` com `VERCEL=1` + PostgreSQL e cria uma análise). ✔ Job verde no GitHub Actions.
+- [x] **8.11** `docs/DEPLOY_VERCEL.md`: passo a passo no painel e pela CLI, Neon, região, variáveis, limites, problemas comuns e checklist do dia. ✔ Arquivo publicado.
+- [x] **8.12** Documentação atualizada (README, API, ARQUITETURA, DEPLOY, manual) e `docs/openapi.json` 1.1.0. ✔ `test_docs_api_cobre_todas_as_rotas`.
+- [ ] **8.13** Projeto importado na Vercel e Neon conectado (feito pelo dono da conta). ✔ `https://<projeto>.vercel.app/api/v1/saude` → `"banco_tipo":"postgres","persistente":true`.
+- [ ] **8.14** Teste de aceite em produção: exemplo → verificar → reclassificar → relatório. ✔ 14 → 13 erros, .docx baixado.
+
+### Fase 9 — Apresentação do trabalho (0,5 dia)
+- [x] **9.1** Roteiro da apresentação (~10 min) com falas, tempos e demonstração ao vivo. ✔ `docs/APRESENTACAO.md`.
+- [x] **9.2** Slides (~11) com problema, solução, arquitetura, tecnologias, demonstração, qualidade, deploy e próximos passos. ✔ Deck publicado (link no roteiro).
+- [x] **9.3** Plano B da demonstração (local/Docker) e perguntas prováveis da banca com respostas. ✔ Seções no roteiro.
+- [ ] **9.4** Preencher nomes, disciplina, professor e o link da Vercel nos slides. ✔ Feito pelo aluno.
+- [ ] **9.5** Ensaio cronometrado (≤ 10 min). ✔ Feito pelo aluno.
+
 ---
 
 ## 5. Estimativas de tempo
@@ -256,7 +285,9 @@ sequenceDiagram
 | 5 | 0,5 d | 1 d | 1,5 d | Estado de sessão do Streamlit |
 | 6 | 0,25 d | 0,5 d | 1 d | — |
 | 7 | 0,5 d | 1 d | 2 d | Credenciais do GitHub / provedor de nuvem |
-| **Total** | **5 d** | **8,5 d** | **13,5 d** | |
+| 8 | 1,5 d | 2 d | 3 d | Limites da plataforma serverless (4,5 MB, disco temporário) |
+| 9 | 0,25 d | 0,5 d | 1 d | — |
+| **Total** | **6,75 d** | **11 d** | **17,5 d** | |
 
 ## 6. Dependências entre componentes
 
@@ -319,3 +350,4 @@ flowchart TD
 | 10/11/2026 | Fases 1–6 concluídas. Ajustes feitos durante a implementação: (a) campos de upload declarados como lista para rejeitar vários arquivos em campo único (antes o FastAPI descartava os extras sem avisar); (b) serialização trata o `NaN` que o pandas 3 coloca no lugar de `None` em colunas de texto; (c) painel de histórico também na tela inicial do Streamlit. |
 | 10/11/2026 | 7.1–7.3 e 7.6 concluídas. O build do Dockerfile é validado no CI (Docker não está instalado na máquina local). |
 | 10/11/2026 | 7.4 e 7.5 concluídas: projeto enviado ao `pedroparosc/missao` sobre o commit original (`4141b03` → `5a9c4b7`). CI verde: testes em Python 3.11/3.12/3.13 e build + smoke test da imagem Docker, o que também valida 7.1 e 7.2. |
+| 10/11/2026 | Fases 8 (Vercel + frontend web + PostgreSQL) e 9 (apresentação) adicionadas a pedido do usuário. Pendentes só as ações que dependem da conta Vercel (8.13–8.14) e do aluno (9.4–9.5). |

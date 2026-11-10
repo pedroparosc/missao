@@ -10,10 +10,10 @@ Módulos:
     seguranca      Autenticação opcional por chave de API (cabeçalho X-API-Key).
     esquemas       Contratos de entrada/saída (Pydantic), publicados no OpenAPI.
     serializacao   Conversão DataFrame/date/NaN <-> JSON sem perda.
-    armazenamento  Repositório SQLite + gravação segura dos arquivos enviados.
+    armazenamento  Repositório SQLite (local) ou PostgreSQL (Vercel/Neon) + arquivos enviados.
     servico        Orquestração: ler documentos -> classificar -> verificar -> persistir.
     rotas          Endpoints HTTP (sistema e análises).
     main           Fábrica da aplicação FastAPI (`criar_app`) e instância `app`.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"

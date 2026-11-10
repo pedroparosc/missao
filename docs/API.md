@@ -3,7 +3,8 @@
 - **Base:** `http://localhost:8000/api/v1`
 - **Documentação interativa:** `/docs` (Swagger) e `/redoc`
 - **Contrato:** [`openapi.json`](openapi.json), gerado com `python -m api.exportar_openapi`
-- **Versão:** 1.0.0
+- **Versão:** 1.1.0
+- **Frontend web:** `/` (pasta `verificador/web/`). Documentos de exemplo em `/exemplos/<arquivo>`.
 
 ## Convenções
 
@@ -31,8 +32,10 @@
 ### `GET /saude`
 Saúde do serviço, usada por healthchecks.
 ```json
-{"status": "ok", "versao": "1.0.0", "banco": true}
+{"status": "ok", "versao": "1.1.0", "banco": true, "banco_tipo": "postgres", "persistente": true}
 ```
+`banco_tipo` é `sqlite` ou `postgres`. `persistente` é `false` quando os dados ficam em disco
+temporário (Vercel sem `DATABASE_URL`).
 
 ### `GET /parametros`
 Valores padrão da barra lateral do frontend e os campos de upload aceitos.
@@ -42,9 +45,14 @@ Valores padrão da barra lateral do frontend e os campos de upload aceitos.
                      "Rendimento", "Imposto/IOF/IR", "Tarifa bancária", "Saque/espécie", "Estorno/devolução", "Gasto"],
   "palavras_smf": ["SECRETARIA MUNICIPAL DA FAZENDA", "..."],
   "tolerancia_dias": 5, "max_entradas_smf": 3, "max_upload_mb": 25,
+  "max_requisicao_mb": null,
   "campos_arquivo": {"extratos_corrente": {"extensoes": ["csv", "pdf", "xls", "xlsx"], "multiplo": true, "descricao": "..."}}
 }
 ```
+
+---
+
+`max_requisicao_mb` é o limite **total** de um envio imposto pela plataforma (4,5 na Vercel). `null` significa sem limite extra.
 
 ---
 

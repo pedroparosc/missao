@@ -15,12 +15,9 @@ API = "/api/v1"
 def test_saude(cliente):
     r = cliente.get(f"{API}/saude")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok", "versao": "1.0.0", "banco": True}
-
-
-def test_raiz_redireciona_para_docs(cliente):
-    r = cliente.get("/", follow_redirects=False)
-    assert r.status_code in (302, 307) and r.headers["location"] == "/docs"
+    j = r.json()
+    assert j["status"] == "ok" and j["versao"] == "1.1.0" and j["banco"] is True
+    assert j["banco_tipo"] in ("sqlite", "postgres") and j["persistente"] is True
 
 
 def test_parametros_padrao_iguais_ao_frontend(cliente):
@@ -39,6 +36,8 @@ def test_openapi_publicado(cliente):
 
 
 def test_config_do_ambiente(monkeypatch, tmp_path):
+    for var in ("VERCEL", "DATABASE_URL", "POSTGRES_URL", "VERIFICADOR_DATABASE_URL"):
+        monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("VERIFICADOR_DB", str(tmp_path / "x.db"))
     monkeypatch.setenv("VERIFICADOR_MAX_UPLOAD_MB", "2")
     monkeypatch.setenv("VERIFICADOR_CORS_ORIGINS", "http://a.com, http://b.com")
@@ -231,7 +230,10 @@ def test_relatorios(cliente, analise):
 
 def test_excluir(cliente, analise, config):
     id_ = analise["id"]
-    assert (config.pasta_uploads / id_).exists()
+    em_disco = config.database_url is None  # no PostgreSQL os arquivos ficam no banco
+    if em_disco:
+        assert (config.pasta_uploads / id_).exists()
     assert cliente.delete(f"{API}/analises/{id_}").status_code == 204
     assert cliente.get(f"{API}/analises/{id_}").status_code == 404
-    assert not (config.pasta_uploads / id_).exists()
+    if em_disco:
+        assert not (config.pasta_uploads / id_).exists()

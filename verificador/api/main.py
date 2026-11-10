@@ -5,21 +5,30 @@ Executar (na pasta `verificador/`):
     uvicorn api.main:app --reload            # desenvolvimento
     uvicorn api.main:app --host 0.0.0.0      # servidor/contêiner
 
-Documentação interativa: http://localhost:8000/docs (Swagger) e /redoc.
+Na Vercel, o ponto de entrada é `index.py` (raiz do repositório), que importa este `app`.
+
+Endereços:
+    /            frontend web (pasta `verificador/web/`)
+    /exemplos/   documentos fictícios de `exemplos/dados/` (botão "Carregar exemplo" do frontend)
+    /api/v1/...  API REST
+    /docs        documentação interativa (Swagger) · /redoc
 """
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from . import __version__
-from .armazenamento import Repositorio
-from .config import Configuracao
+from .armazenamento import criar_repositorio
+from .config import RAIZ_PROJETO, Configuracao
 from .rotas import analises, sistema
 from .servico import ErroServico, ServicoAnalises
 
 PREFIXO = "/api/v1"
+PASTA_WEB = RAIZ_PROJETO / "web"
+PASTA_EXEMPLOS = RAIZ_PROJETO / "exemplos" / "dados"
 
 DESCRICAO = """
 API do **Verificador de Prestação de Contas**: recebe extratos, planilhas, notas e o arquivo
@@ -39,8 +48,7 @@ def criar_app(config: Configuracao | None = None) -> FastAPI:
                   openapi_tags=[{"name": "análises", "description": "Criação, revisão e relatórios das análises."},
                                 {"name": "sistema", "description": "Saúde e parâmetros padrão."}])
     app.state.config = config
-    app.state.servico = ServicoAnalises(Repositorio(config.caminho_db, config.pasta_uploads),
-                                        config.max_upload_bytes)
+    app.state.servico = ServicoAnalises(criar_repositorio(config), config.max_upload_bytes)
 
     if config.cors_origins:
         app.add_middleware(CORSMiddleware, allow_origins=config.cors_origins, allow_methods=["*"],
@@ -51,15 +59,22 @@ def criar_app(config: Configuracao | None = None) -> FastAPI:
         # Converte erros de domínio (404, 413, 415, 422) em respostas HTTP padronizadas.
         return JSONResponse({"detail": exc.mensagem}, status_code=exc.status)
 
-    @app.get("/", include_in_schema=False)
-    def _raiz() -> RedirectResponse:
-        return RedirectResponse("/docs")
-
     app.include_router(sistema.router, prefix=PREFIXO)
     app.include_router(analises.router, prefix=PREFIXO)
+
+    # Arquivos estáticos montados DEPOIS das rotas, para que /api, /docs e /openapi.json tenham
+    # prioridade (na Vercel, montagens viram arquivos servidos pela CDN).
+    if PASTA_EXEMPLOS.is_dir():
+        app.mount("/exemplos", StaticFiles(directory=PASTA_EXEMPLOS), name="exemplos")
+    if PASTA_WEB.is_dir():
+        app.mount("/", StaticFiles(directory=PASTA_WEB, html=True), name="web")
+    else:  # instalação sem o frontend web: a raiz leva à documentação da API
+        @app.get("/", include_in_schema=False)
+        def _raiz() -> RedirectResponse:
+            return RedirectResponse("/docs")
     return app
 
 
-# Instância usada por `uvicorn api.main:app`. Não cria arquivos no import: o banco é
-# inicializado na primeira requisição.
+# Instância usada por `uvicorn api.main:app` e pela Vercel (via index.py). Não cria arquivos
+# no import: o banco é inicializado na primeira requisição.
 app = criar_app()

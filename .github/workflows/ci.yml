@@ -1,5 +1,8 @@
-# Integração contínua: testes (com cobertura mínima de 80% no pacote api) em várias versões
-# do Python e build + smoke test da imagem Docker.
+# Integração contínua:
+#   testes           pytest (cobertura mínima de 80%) em Python 3.11, 3.12 e 3.13, com SQLite
+#   testes-postgres  a mesma suíte contra um PostgreSQL real (como o Neon usado na Vercel)
+#   vercel-simulado  instala só o manifesto da Vercel (pyproject.toml) e sobe index:app com VERCEL=1
+#   docker           build + smoke test da imagem
 name: CI
 
 on:
@@ -43,6 +46,79 @@ jobs:
           name: cobertura
           path: verificador/coverage.xml
 
+  testes-postgres:
+    name: Testes com PostgreSQL
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: teste
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      VERIFICADOR_TESTE_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/teste
+    defaults:
+      run:
+        working-directory: verificador
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: verificador/requirements*.txt
+      - name: Instalar dependências (+ driver PostgreSQL)
+        run: python -m pip install -r requirements-dev.txt "psycopg[binary]>=3.2"
+      - name: Rodar a suíte inteira no PostgreSQL
+        run: python -m pytest -q -rs
+
+  vercel-simulado:
+    name: Pacote da Vercel (simulação)
+    needs: testes
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: verificador
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar só o manifesto da Vercel (pyproject.toml), como a plataforma faz
+        run: |
+          python -m pip install uv
+          uv venv /tmp/vercel --python 3.12
+          uv pip install --python /tmp/vercel/bin/python -r pyproject.toml uvicorn
+      - name: Conferir pacote (sem Streamlit) e tamanho
+        run: |
+          /tmp/vercel/bin/python -c "import importlib.util as u, sys; sys.exit(u.find_spec('streamlit') is not None)"
+          du -sh /tmp/vercel/lib/python3.12/site-packages
+      - name: Subir index:app com VERCEL=1 + PostgreSQL e testar
+        env:
+          VERCEL: "1"
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/verificador
+        run: |
+          /tmp/vercel/bin/python -m uvicorn index:app --port 8000 > /tmp/uvicorn.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://localhost:8000/api/v1/saude && break; sleep 1; done
+          curl -fsS http://localhost:8000/api/v1/saude | grep '"banco_tipo":"postgres"' | grep '"persistente":true'
+          curl -fsS http://localhost:8000/api/v1/parametros | grep '"max_requisicao_mb":4.5'
+          curl -fsS http://localhost:8000/ | grep 'Verificador de Prestação de Contas'
+          D=verificador/exemplos/dados
+          curl -fsS -X POST http://localhost:8000/api/v1/analises             -F "projeto=@$D/projeto - Festival Cultura Viva.docx"             -F "extratos_corrente=@$D/extrato_conta_corrente.pdf"             -F "extratos_investimento=@$D/extrato_investimento.xlsx"             -F "planilha_gastos=@$D/planilha_gastos.xlsx"             -F "planilha_previsto=@$D/previsto_executado.csv"             -F "planilha_rendimentos=@$D/rendimentos.csv" | tee /tmp/analise.json | grep '"n_erros":14'
+          curl -fsS "http://localhost:8000/api/v1/analises" | grep '"total":1'
+      - name: Log do servidor (em caso de falha)
+        if: failure()
+        run: cat /tmp/uvicorn.log
+
   docker:
     name: Build e smoke test da imagem
     needs: testes
@@ -61,6 +137,7 @@ jobs:
             sleep 2
           done
           curl -fsS http://localhost:8000/api/v1/saude | grep '"status":"ok"'
+          curl -fsS http://localhost:8000/ | grep 'Verificador de Prestação de Contas'
           curl -fsS -X POST http://localhost:8000/api/v1/analises \
             -F "extratos_corrente=@verificador/exemplos/dados/extrato_conta_corrente.pdf" \
             -F "planilha_gastos=@verificador/exemplos/dados/planilha_gastos.xlsx" | grep '"total_smf":60000.0'

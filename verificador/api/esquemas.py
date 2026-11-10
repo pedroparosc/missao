@@ -21,7 +21,9 @@ class Saude(BaseModel):
     """Estado do serviço (usado por healthchecks de Docker/PaaS)."""
     status: Literal["ok", "degradado"]
     versao: str
-    banco: bool = Field(description="True se o SQLite respondeu.")
+    banco: bool = Field(description="True se o banco respondeu.")
+    banco_tipo: Literal["sqlite", "postgres"]
+    persistente: bool = Field(description="False quando os dados ficam em disco temporário (ex.: Vercel sem banco).")
 
 
 class CampoArquivo(BaseModel):
@@ -37,6 +39,8 @@ class ParametrosPadrao(BaseModel):
     tolerancia_dias: int
     max_entradas_smf: int
     max_upload_mb: int
+    max_requisicao_mb: float | None = Field(None, description="Limite total da requisição imposto pela "
+                                                              "plataforma (4,5 MB na Vercel); null = sem limite extra.")
     campos_arquivo: dict[str, CampoArquivo]
 
 

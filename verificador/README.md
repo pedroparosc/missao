@@ -37,15 +37,19 @@ O mesmo motor também está disponível como **API REST** (FastAPI), que guarda 
    onde você reabre análises, baixa relatórios e exclui registros.
 3. Sem `VERIFICADOR_API_URL`, o app funciona como antes: tudo local, sem rede.
 
+Com a API rodando, a **interface web** fica em `http://localhost:8000/`. É a mesma publicada na Vercel e tem
+botão para carregar os documentos de exemplo.
+
 Referência completa: [`../docs/API.md`](../docs/API.md). Arquitetura: [`../docs/ARQUITETURA.md`](../docs/ARQUITETURA.md).
-Deploy (Docker/nuvem): [`../docs/DEPLOY.md`](../docs/DEPLOY.md).
+Deploy (Docker/nuvem): [`../docs/DEPLOY.md`](../docs/DEPLOY.md). Vercel: [`../docs/DEPLOY_VERCEL.md`](../docs/DEPLOY_VERCEL.md).
 
 | Componente | Arquivo | Função |
 |---|---|---|
 | Aplicação FastAPI | `api/main.py` | Cria a app, CORS, tratamento de erros |
 | Rotas | `api/rotas/` | Endpoints `/api/v1/...` |
 | Serviço | `api/servico.py` | Lê documentos → classifica → verifica → persiste |
-| Repositório | `api/armazenamento.py` | SQLite + arquivos originais (SHA-256) |
+| Repositório | `api/armazenamento.py` | SQLite (local) ou PostgreSQL (Vercel) + arquivos originais (SHA-256) |
+| Frontend web | `web/` | Interface HTML/JS servida pela API em `/` |
 | Contratos | `api/esquemas.py` | Modelos de entrada e saída (OpenAPI) |
 | Cliente | `cliente_api.py` | Cliente HTTP usado pelo frontend |
 

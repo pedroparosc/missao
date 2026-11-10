@@ -3,7 +3,7 @@
   "info": {
     "title": "Verificador de Prestação de Contas — API",
     "description": "\nAPI do **Verificador de Prestação de Contas**: recebe extratos, planilhas, notas e o arquivo\n“projeto - [nome]”, executa os Passos 1 a 4 da verificação contábil e gera o relatório descritivo.\n\n* Autenticação: cabeçalho `X-API-Key` quando `VERIFICADOR_API_KEY` estiver configurada.\n* Erros seguem o formato `{\"detail\": ...}`.\n* A consulta de autenticidade das notas (SEFAZ/Prefeitura) exige captcha e **não** é automatizada:\n  a API devolve um checklist com os links para conferência manual.\n",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "paths": {
     "/api/v1/saude": {
@@ -1664,6 +1664,18 @@
             "type": "integer",
             "title": "Max Upload Mb"
           },
+          "max_requisicao_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Requisicao Mb",
+            "description": "Limite total da requisição imposto pela plataforma (4,5 MB na Vercel); null = sem limite extra."
+          },
           "campos_arquivo": {
             "additionalProperties": {
               "$ref": "#/components/schemas/CampoArquivo"
@@ -1879,14 +1891,29 @@
           "banco": {
             "type": "boolean",
             "title": "Banco",
-            "description": "True se o SQLite respondeu."
+            "description": "True se o banco respondeu."
+          },
+          "banco_tipo": {
+            "type": "string",
+            "enum": [
+              "sqlite",
+              "postgres"
+            ],
+            "title": "Banco Tipo"
+          },
+          "persistente": {
+            "type": "boolean",
+            "title": "Persistente",
+            "description": "False quando os dados ficam em disco temporário (ex.: Vercel sem banco)."
           }
         },
         "type": "object",
         "required": [
           "status",
           "versao",
-          "banco"
+          "banco",
+          "banco_tipo",
+          "persistente"
         ],
         "title": "Saude",
         "description": "Estado do serviço (usado por healthchecks de Docker/PaaS)."

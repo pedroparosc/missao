@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verificador de Prestação de Contas</title>
+  <meta name="description" content="Conferência automática de prestações de contas: extratos, planilhas, notas fiscais e relatório descritivo.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <!--
+    Frontend web do Verificador (HTML/CSS/JS puros, sem etapa de build).
+    Servido pela própria API (FastAPI StaticFiles) — local, Docker ou Vercel — e consome /api/v1.
+    Equivale ao frontend Streamlit (app.py), que continua disponível para uso local.
+  -->
+  <header class="topo">
+    <a class="marca" href="#/nova"><span aria-hidden="true">🧾</span> Verificador de Prestação de Contas</a>
+    <nav class="menu" aria-label="Principal">
+      <a href="#/nova" data-rota="nova">Nova análise</a>
+      <a href="#/historico" data-rota="historico">Histórico</a>
+      <a href="/docs" target="_blank" rel="noopener">API</a>
+    </nav>
+    <span id="status" class="status" title="Estado da API">conectando…</span>
+  </header>
+
+  <main id="conteudo">
+    <!-- ============================================================ NOVA ANÁLISE -->
+    <section id="tela-nova" class="tela" hidden>
+      <div class="cabecalho-tela">
+        <div>
+          <h1>Nova análise</h1>
+          <p class="sutil">Envie os documentos da prestação de contas. Os extratos e o arquivo
+            <strong>“projeto - [nome do projeto]”</strong> são os principais mandantes da verificação.</p>
+        </div>
+        <button type="button" id="btn-exemplo" class="botao secundario">📂 Carregar documentos de exemplo</button>
+      </div>
+
+      <form id="form-nova" novalidate>
+        <div class="cartao">
+          <h2>Documentos</h2>
+          <div id="campos-arquivo" class="grade-arquivos"></div>
+          <p id="medidor" class="sutil medidor"></p>
+        </div>
+
+        <div class="cartao">
+          <h2>Dados do projeto <span class="sutil">(em branco = lidos do arquivo do projeto)</span></h2>
+          <div class="grade-campos">
+            <label>Nome do projeto <input name="nome_projeto" autocomplete="off"></label>
+            <label>CNPJ da entidade <input name="cnpj_entidade" placeholder="00.000.000/0000-00" autocomplete="off"></label>
+            <label>Início da vigência <input name="inicio" type="date"></label>
+            <label>Fim da vigência <input name="fim" type="date"></label>
+            <label>Tolerância de datas (dias) <input name="tolerancia_dias" type="number" min="0" max="60" value="5"></label>
+            <label>Máximo de entradas da SMF <input name="max_entradas_smf" type="number" min="1" max="20" value="3"></label>
+          </div>
+          <details class="avancado">
+            <summary>Palavras que identificam entradas da SMF no extrato</summary>
+            <textarea name="palavras_smf" rows="6" placeholder="Uma por linha (em branco = lista padrão)"></textarea>
+          </details>
+        </div>
+
+        <div class="acoes">
+          <button type="submit" id="btn-verificar" class="botao primario">🔎 Verificar prestação de contas</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============================================================ HISTÓRICO -->
+    <section id="tela-historico" class="tela" hidden>
+      <div class="cabecalho-tela">
+        <div>
+          <h1>Histórico de análises</h1>
+          <p class="sutil">Análises salvas no servidor, das mais recentes para as mais antigas.</p>
+        </div>
+        <button type="button" id="btn-atualizar-hist" class="botao secundario">↻ Atualizar</button>
+      </div>
+      <div class="cartao rolagem"><table id="tabela-historico" class="tabela"></table></div>
+    </section>
+
+    <!-- ============================================================ ANÁLISE -->
+    <section id="tela-analise" class="tela" hidden>
+      <div class="cabecalho-tela">
+        <div>
+          <h1 id="analise-titulo">Análise</h1>
+          <p id="analise-meta" class="sutil"></p>
+        </div>
+        <div class="botoes">
+          <button type="button" class="botao secundario" data-relatorio="docx">⬇️ Relatório Word</button>
+          <button type="button" class="botao secundario" data-relatorio="md">⬇️ Markdown</button>
+          <button type="button" id="btn-excluir" class="botao perigo">🗑️ Excluir</button>
+        </div>
+      </div>
+
+      <div class="abas" role="tablist">
+        <button role="tab" data-aba="resultado" aria-selected="true">📋 Resultado</button>
+        <button role="tab" data-aba="lancamentos">🏦 Lançamentos (revisar)</button>
+        <button role="tab" data-aba="conciliacao">🔗 Conciliação</button>
+        <button role="tab" data-aba="orcamento">📊 Previsto x executado</button>
+        <button role="tab" data-aba="manual">✅ Verificação manual</button>
+        <button role="tab" data-aba="dados">🗂️ Dados lidos</button>
+        <button role="tab" data-aba="parametros">⚙️ Parâmetros</button>
+      </div>
+
+      <div class="painel" data-painel="resultado">
+        <div id="metricas" class="metricas"></div>
+        <p id="parecer" class="parecer"></p>
+        <div class="cartao">
+          <div class="linha-titulo">
+            <h2>Ocorrências</h2>
+            <div id="filtros" class="filtros"></div>
+          </div>
+          <div class="rolagem"><table id="tabela-ocorrencias" class="tabela"></table></div>
+        </div>
+      </div>
+
+      <div class="painel" data-painel="lancamentos" hidden>
+        <p class="sutil">Confira a classificação de cada lançamento lido dos extratos. Corrija o que estiver errado
+          e clique em <strong>Salvar e recalcular</strong>: a verificação é refeita no servidor.</p>
+        <div class="cartao"><h2>Conta corrente</h2><div class="rolagem"><table id="lanc-corrente" class="tabela"></table></div></div>
+        <div class="cartao"><h2>Conta investimento</h2><div class="rolagem"><table id="lanc-investimento" class="tabela"></table></div></div>
+        <div class="acoes"><button type="button" id="btn-salvar-lanc" class="botao primario">💾 Salvar e recalcular</button></div>
+      </div>
+
+      <div class="painel" data-painel="conciliacao" hidden>
+        <p id="resumo-conciliacao" class="sutil"></p>
+        <div class="cartao rolagem"><table id="tabela-conciliacao" class="tabela"></table></div>
+      </div>
+
+      <div class="painel" data-painel="orcamento" hidden>
+        <div class="cartao rolagem"><table id="tabela-orcamento" class="tabela"></table></div>
+      </div>
+
+      <div class="painel" data-painel="manual" hidden>
+        <p class="sutil">Estas verificações dependem de consulta humana. Os portais da SEFAZ e da Prefeitura exigem
+          captcha, que deve ser respondido por você — o sistema não automatiza essa etapa.</p>
+        <div class="cartao rolagem"><table id="tabela-manual" class="tabela"></table></div>
+      </div>
+
+      <div class="painel" data-painel="dados" hidden>
+        <div id="dados-projeto" class="cartao"></div>
+        <div id="dados-avisos" class="cartao"></div>
+        <div class="cartao"><h2>Arquivos recebidos</h2><div class="rolagem"><table id="tabela-arquivos" class="tabela"></table></div></div>
+      </div>
+
+      <div class="painel" data-painel="parametros" hidden>
+        <form id="form-parametros" class="cartao" novalidate>
+          <h2>Parâmetros da verificação</h2>
+          <div class="grade-campos">
+            <label>Nome do projeto <input name="nome_projeto"></label>
+            <label>CNPJ da entidade <input name="cnpj_entidade"></label>
+            <label>Início da vigência <input name="inicio" type="date"></label>
+            <label>Fim da vigência <input name="fim" type="date"></label>
+            <label>Tolerância de datas (dias) <input name="tolerancia_dias" type="number" min="0" max="60"></label>
+            <label>Máximo de entradas da SMF <input name="max_entradas_smf" type="number" min="1" max="20"></label>
+          </div>
+          <div class="acoes"><button type="submit" class="botao primario">↻ Aplicar e recalcular</button></div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <details>
+      <summary>Chave de acesso à API</summary>
+      <p class="sutil">Necessária só se o servidor tiver <code>VERIFICADOR_API_KEY</code> configurada.
+        Fica guardada apenas neste navegador.</p>
+      <input id="chave-api" type="password" autocomplete="off" placeholder="X-API-Key">
+    </details>
+    <span class="sutil">FMU · Verificador de Prestação de Contas · <a href="/docs">documentação da API</a></span>
+  </footer>
+
+  <div id="carregando" class="carregando" hidden><div class="roda" aria-hidden="true"></div><span id="carregando-texto">Processando…</span></div>
+  <div id="avisos" class="avisos" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

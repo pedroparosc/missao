@@ -5,7 +5,8 @@
 ```mermaid
 flowchart LR
     subgraph Clientes
-        ST["Frontend Streamlit<br/>verificador/app.py"]
+        ST["Frontend Streamlit<br/>verificador/app.py (local)"]
+        WEB["Frontend web<br/>verificador/web (local, Docker, Vercel)"]
         CLI["CLI<br/>verificar_pasta.py"]
         EXT["Outros clientes<br/>(curl, sistemas)"]
     end
@@ -24,8 +25,9 @@ flowchart LR
     ST -- "HTTP via cliente_api.py (opcional)" --> R
     CLI --> Nucleo
     EXT --> R
+    WEB -- "fetch /api/v1" --> R
     S --> L & V & RL
-    REP --> DB[("SQLite")]
+    REP --> DB[("SQLite (local) ou<br/>PostgreSQL (Vercel/Neon)")]
     REP --> FS[("uploads/")]
 ```
 
@@ -33,7 +35,7 @@ flowchart LR
 
 | Camada | Pasta | Regra |
 |---|---|---|
-| Apresentação | `app.py`, `verificar_pasta.py` | Interface e CLI. Não contêm regras de negócio. |
+| Apresentação | `app.py`, `web/`, `verificar_pasta.py` | Interfaces (Streamlit e web) e CLI. Não contêm regras de negócio. |
 | API (adaptador HTTP) | `api/rotas`, `api/esquemas.py`, `api/seguranca.py` | Valida a entrada, converte em chamadas ao serviço e serializa a saída. |
 | Aplicação | `api/servico.py` | Casos de uso (criar, revisar, reprocessar, relatório). Não conhece HTTP. |
 | Infraestrutura | `api/armazenamento.py`, `api/serializacao.py`, `api/config.py` | SQLite, disco e variáveis de ambiente. |
@@ -103,10 +105,11 @@ mantém as correções do usuário. Os arquivos originais ficam guardados para a
 |---|---|---|---|
 | 1 | FastAPI | Flask, Django REST | Validação/OpenAPI automáticos, upload multipart nativo, desempenho. |
 | 2 | Backend no mesmo pacote do núcleo | Microsserviço separado | Zero duplicação de regras. Um único deploy. |
-| 3 | SQLite (stdlib) | PostgreSQL + ORM | Sem infraestrutura extra. O volume esperado é baixo. A troca fica isolada em `armazenamento.py`. |
+| 3 | SQLite (stdlib) no uso local, PostgreSQL na nuvem | ORM (SQLAlchemy) | Sem infraestrutura extra no uso local. Na Vercel o disco é temporário, então `RepositorioPostgres` (mesma interface, SQL quase idêntico) é ativado por `DATABASE_URL`. |
 | 4 | Processamento síncrono | Fila (Celery/RQ) | Uma verificação leva segundos. Fila só se surgir lote grande. |
 | 5 | Integração opcional no Streamlit | Reescrever o frontend como cliente puro da API | Não quebra o uso local atual (`executar.bat`). |
 | 6 | Sem automação de captcha | Serviços de quebra de captcha | Requisito do documento de referência e questão ética/legal. A API gera checklist com links. |
+| 7 | Frontend web em HTML/JS puro na Vercel | Next.js/React; Streamlit Community Cloud | A Vercel não roda Streamlit. HTML/JS sem build é servido pela própria API (um único deploy e um único link) e não exige Node.js. |
 
 ## Segurança
 

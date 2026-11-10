@@ -29,7 +29,11 @@ VERIFICADOR_CORS_ORIGINS=https://verificador.seudominio.com.br
 
 ## 3. Nuvem
 
-A imagem é a mesma em qualquer provedor que rode contêineres.
+> **Vercel** (recomendado para a demonstração: link público, gratuito, deploy a cada push):
+> veja o guia próprio, [DEPLOY_VERCEL.md](DEPLOY_VERCEL.md). Lá a API roda como função
+> serverless, o frontend web é servido junto e o histórico vai para um PostgreSQL Neon.
+
+Para provedores de contêiner, a imagem Docker é a mesma em qualquer um deles.
 
 | Provedor | Passos |
 |---|---|
@@ -41,6 +45,7 @@ A imagem é a mesma em qualquer provedor que rode contêineres.
 
 | Variável | Padrão | Produção |
 |---|---|---|
+| `DATABASE_URL` / `VERIFICADOR_DATABASE_URL` | vazio (usa SQLite) | URL PostgreSQL. Exige `pip install "psycopg[binary]"` (já incluído no manifesto da Vercel) |
 | `VERIFICADOR_DB` | `/app/data/verificador.db` (contêiner) | manter em volume persistente |
 | `VERIFICADOR_UPLOADS` | `/app/data/uploads` (contêiner) | manter em volume persistente |
 | `VERIFICADOR_MAX_UPLOAD_MB` | 25 | ajustar ao tamanho dos extratos |
@@ -77,6 +82,6 @@ versões anteriores continuam lendo o mesmo arquivo.
 
 ## 7. Evoluções
 
-- Trocar o SQLite por PostgreSQL (alterar só `api/armazenamento.py`).
+- ~~Trocar o SQLite por PostgreSQL~~: feito (`RepositorioPostgres`, ativado por `DATABASE_URL`).
 - Guardar os uploads em armazenamento de objetos (S3/Blob) em vez do disco local.
 - Autenticação por usuário (OAuth2/JWT) se houver vários escritórios usando o mesmo servidor.

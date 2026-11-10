@@ -1,12 +1,15 @@
 """Fixtures compartilhadas pelos testes.
 
 - `cliente`: API isolada com banco SQLite e pasta de uploads temporários (não toca em `data/`).
+  Se a variável `VERIFICADOR_TESTE_POSTGRES_URL` existir, a MESMA suíte roda contra PostgreSQL
+  (o CI faz isso com um contêiner postgres); as tabelas são esvaziadas antes de cada teste.
 - `cliente_com_chave`: mesma API exigindo a chave `segredo-teste`.
 - `arquivos_exemplo`: documentos fictícios de `exemplos/dados/` no formato do multipart.
 - `analise`: análise já criada com todos os arquivos de exemplo (JSON do AnaliseDetalhe).
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -28,7 +31,22 @@ ARQUIVOS = {
 }
 
 
+URL_POSTGRES_TESTE = os.getenv("VERIFICADOR_TESTE_POSTGRES_URL") or None
+USANDO_POSTGRES = URL_POSTGRES_TESTE is not None
+
+
+def _limpar_postgres() -> None:
+    """Esvazia as tabelas do banco de teste (cada teste começa do zero, como no SQLite em tmp_path)."""
+    from api.armazenamento import RepositorioPostgres
+    repo = RepositorioPostgres(URL_POSTGRES_TESTE)
+    with repo._conexao() as con:
+        con.execute("TRUNCATE arquivos, analises RESTART IDENTITY CASCADE")
+
+
 def _config(tmp_path: Path, **extra) -> Configuracao:
+    if USANDO_POSTGRES:
+        _limpar_postgres()
+        extra.setdefault("database_url", URL_POSTGRES_TESTE)
     return Configuracao(caminho_db=tmp_path / "teste.db", pasta_uploads=tmp_path / "uploads", **extra)
 
 

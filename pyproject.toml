@@ -1,0 +1,25 @@
+# Manifesto usado pela Vercel para instalar dependências e localizar a aplicação.
+# Contém só o necessário para a API + frontend web (sem Streamlit, que não roda na Vercel).
+# O uso local/Docker continua com verificador/requirements*.txt.
+
+[project]
+name = "verificador-prestacao-contas"
+version = "1.1.0"
+description = "Verificador de Prestação de Contas — API FastAPI + frontend web"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"   # Python 3.12 na Vercel (versão testada no CI)
+dependencies = [
+    "fastapi>=0.115",
+    "python-multipart>=0.0.9",
+    "pandas>=2.2",
+    "openpyxl>=3.1",
+    "pdfplumber>=0.11",
+    "python-docx>=1.1",
+    "psycopg[binary]>=3.2",        # PostgreSQL (Neon) — usado quando DATABASE_URL existe
+]
+
+[tool.uv]
+package = false   # aplicação, não biblioteca: não precisa de build-system
+
+[tool.vercel]
+entrypoint = "index:app"
