@@ -1,5 +1,7 @@
 # Deploy na Vercel (frontend web + API + PostgreSQL Neon)
 
+> **Produção atual:** <https://missao-phi-seven.vercel.app> (projeto `missao`, função e banco Neon em São Paulo, `gru1`).
+
 Este guia publica o Verificador em um endereço público como `https://<projeto>.vercel.app`,
 com a **interface web**, a **API** e o **histórico salvo em PostgreSQL (Neon, plano gratuito)**.
 

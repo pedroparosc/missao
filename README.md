@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/pedroparosc/missao/actions/workflows/ci.yml/badge.svg)](https://github.com/pedroparosc/missao/actions/workflows/ci.yml)
 
+**Aplicação no ar:** <https://missao-phi-seven.vercel.app> · documentação da API: <https://missao-phi-seven.vercel.app/docs>
+
 Automatiza a conferência contábil de prestações de contas de projetos financiados pela
 Secretaria Municipal da Fazenda (SMF). O sistema lê extratos bancários, planilhas, notas fiscais e o
 arquivo “projeto - [nome]”, cruza tudo conforme o

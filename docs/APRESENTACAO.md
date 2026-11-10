@@ -4,8 +4,8 @@
 em cada slide). Exporta para PowerPoint e PDF pelo menu *Share › Export*. O link é privado: compartilhe pelo
 menu *Share* com quem for apresentar junto.
 
-**Antes de apresentar, preencha:** `[Disciplina]`, `[Nome 1..3]`, `[Nome do professor]`, `[__/__/2026]`
-(slide 1) e o endereço da Vercel `[https://seu-projeto.vercel.app]` (slides 7 e 12).
+**Antes de apresentar, preencha:** `[Disciplina]`, `[Nome 1..3]`, `[Nome do professor]` e `[__/__/2026]`
+(slide 1). O endereço da aplicação já está nos slides 7 e 12: **<https://missao-phi-seven.vercel.app>**.
 
 ## Tempo por slide
 
@@ -30,7 +30,7 @@ Com mais de uma pessoa, uma divisão possível: **A** slides 1–4, **B** slides
 ## Demonstração ao vivo (2 minutos)
 
 Preparação, 5 minutos antes:
-1. Abrir `https://<projeto>.vercel.app/api/v1/saude` e conferir `"status":"ok"` e `"persistente":true`. Isso "acorda" a função.
+1. Abrir <https://missao-phi-seven.vercel.app/api/v1/saude> e conferir `"status":"ok"` e `"persistente":true`. Isso "acorda" a função.
 2. Deixar a página inicial aberta numa aba e o Word pronto para abrir o relatório.
 3. Opcional: apagar análises de teste no **Histórico** para a lista ficar limpa.
 
@@ -64,9 +64,10 @@ Roteiro:
 
 ## Checklist final
 
-- [ ] Placeholders dos slides preenchidos (nomes, disciplina, professor, data, link da Vercel).
+- [ ] Placeholders dos slides preenchidos (nomes, disciplina, professor e data).
+- [x] Link da Vercel nos slides 7 e 12.
 - [ ] Deck compartilhado com os colegas de grupo (menu *Share*) e exportado em PDF como cópia de segurança.
-- [ ] `/api/v1/saude` da Vercel respondendo com `"persistente":true`.
+- [x] `/api/v1/saude` da Vercel respondendo com `"persistente":true` (verificado em 10/11/2026).
 - [ ] Demonstração ensaiada uma vez, de ponta a ponta.
 - [ ] Plano B testado no notebook da apresentação.
 - [ ] Ensaio cronometrado ≤ 10 minutos.
