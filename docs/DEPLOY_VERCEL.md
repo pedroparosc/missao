@@ -26,7 +26,7 @@ flowchart LR
 |---|---|
 | `index.py` (raiz) | Ponto de entrada. Coloca `verificador/` no `sys.path` e exporta `app` (FastAPI). |
 | `pyproject.toml` (raiz) | Dependências **só da API e do frontend web** (sem Streamlit), Python 3.12 e `[tool.vercel] entrypoint = "index:app"`. |
-| `vercel.json` (raiz) | `maxDuration` de 60 s e exclusão de testes, documentação e backups do pacote da função. |
+| `vercel.json` (raiz) | Região da função `gru1` (São Paulo, a mesma do banco Neon), `maxDuration` de 60 s e exclusão de testes, documentação e backups do pacote da função. |
 | `verificador/web/` | Interface web (HTML/CSS/JS), servida na raiz `/`. |
 | `verificador/api/config.py` | Detecta a Vercel (`VERCEL=1`) e lê `DATABASE_URL`/`POSTGRES_URL` do Neon. |
 | `verificador/api/armazenamento.py` | `RepositorioPostgres`: mesmas operações do SQLite, com arquivos guardados no banco. |
@@ -73,17 +73,18 @@ Ao terminar, abra `https://<projeto>.vercel.app/api/v1/saude`. Sem banco, a resp
 1. No projeto, abra a aba **Storage** e clique em **Create Database** (ou **Browse Marketplace**).
 2. Escolha **Neon** (*Serverless Postgres*) e clique em **Continue**.
 3. Região: escolha **São Paulo (sa-east-1)**, se houver, ou a mais próxima. Plano: **Free**. Clique em **Continue / Create**.
-4. Em **Connect Project**, selecione este projeto e os ambientes **Production** e **Preview** e clique em **Connect**.
-   A integração cria sozinha as variáveis `DATABASE_URL`, `POSTGRES_URL` e outras. A aplicação lê
-   `DATABASE_URL` primeiro.
+4. Em **Connect Project**, selecione este projeto e os ambientes **Production** e **Preview**. Em
+   **Custom Prefix**, escreva `DATABASE` e clique em **Connect**. A integração cria `DATABASE_URL`,
+   `DATABASE_POSTGRES_URL` e outras. A aplicação lê `DATABASE_URL`. Com outro prefixo, crie
+   `VERIFICADOR_DATABASE_URL` com o valor da URL `<PREFIXO>_URL`.
 5. Abra **Deployments**, clique em **⋯** no último deploy e escolha **Redeploy**. As variáveis novas só valem em deploys novos.
 
 Confira de novo `/api/v1/saude`. O esperado é `"banco_tipo":"postgres","persistente":true`.
 As tabelas são criadas automaticamente na primeira requisição.
 
-### 4. Região da função (recomendado)
-Em **Settings → Functions → Function Region**, escolha a região mais próxima do banco
-(ex.: **São Paulo, Brazil – gru1**) e faça **Redeploy**. Isso reduz a latência entre a função e o Neon.
+### 4. Região da função
+O `vercel.json` já fixa a função em **São Paulo (`gru1`)**. Crie o banco Neon na mesma região, para
+reduzir a latência entre a função e o banco. Se o banco ficar em outra região, ajuste `"regions"` no `vercel.json`.
 
 ### 5. Testar
 1. Abra `https://<projeto>.vercel.app/`.
