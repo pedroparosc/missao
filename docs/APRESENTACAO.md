@@ -1,11 +1,11 @@
 # Roteiro da apresentação (~10 minutos)
 
-**Slides:** deck "Verificador de Prestação de Contas — Apresentação" (12 slides, com notas do apresentador
+**Slides:** deck "Verificador de Prestação de Contas — Apresentação" (13 slides, com notas do apresentador
 em cada slide). Exporta para PowerPoint e PDF pelo menu *Share › Export*. O link é privado: compartilhe pelo
 menu *Share* com quem for apresentar junto.
 
 **Antes de apresentar, preencha:** `[Disciplina]`, `[Nome 1..3]`, `[Nome do professor]` e `[__/__/2026]`
-(slide 1). O endereço da aplicação já está nos slides 7 e 12: **<https://missao-phi-seven.vercel.app>**.
+(slide 1). O endereço da aplicação já está nos slides 8 e 13: **<https://missao-phi-seven.vercel.app>**.
 
 ## Tempo por slide
 
@@ -13,19 +13,26 @@ menu *Share* com quem for apresentar junto.
 |---|---|---|---|
 | 1 | Capa | 0:30 | Quem somos e o que o sistema faz, em uma frase. |
 | 2 | O problema | 1:00 | A conferência manual é lenta, tem muitas regras e deixa passar erros. |
-| 3 | A solução | 1:00 | 5 etapas: envio → leitura → classificação (revisável) → verificação → relatório. |
-| 4 | O que é verificado | 0:45 | Cada passo da especificação virou uma regra automática; o captcha fica manual, de propósito. |
-| 5 | Arquitetura | 1:00 | Três interfaces, uma API e **um único núcleo de regras**; SQLite ou PostgreSQL. |
-| 6 | Tecnologias | 0:45 | Por que Python/pandas/FastAPI/PostgreSQL/Vercel. |
-| 7 | Demonstração | 2:00 | Ao vivo na Vercel (roteiro abaixo). |
-| 8 | Resultado do exemplo | 0:45 | 14 erros e 5 alertas, todos os erros propositais encontrados. |
-| 9 | Qualidade | 0:45 | 105 testes, 94% de cobertura, 6 verificações no CI. |
-| 10 | Publicação | 0:45 | GitHub → CI → Vercel → Neon; os 3 limites da nuvem e como foram resolvidos. |
-| 11 | Limitações e próximos passos | 0:30 | OCR, login por usuário, preços integrados. |
-| 12 | Perguntas | 0:15 | Agradecer e abrir para perguntas. |
+| 3 | A solução | 0:45 | 5 etapas: envio → leitura → classificação (revisável) → verificação → relatório. |
+| 4 | Fluxo da solução | 0:45 | Entradas → processamento → saídas; onde a pessoa decide; a IA foi usada no desenvolvimento, não em execução. |
+| 5 | O que é verificado | 0:30 | Cada passo da especificação virou uma regra automática; o captcha fica manual, de propósito. |
+| 6 | Arquitetura | 1:00 | Três interfaces, uma API e **um único núcleo de regras**; SQLite ou PostgreSQL. |
+| 7 | Tecnologias | 0:30 | Por que Python/pandas/FastAPI/PostgreSQL/Vercel. |
+| 8 | Demonstração | 2:00 | Ao vivo na Vercel (roteiro abaixo). |
+| 9 | Resultado do exemplo | 0:45 | 14 erros e 5 alertas, todos os erros propositais encontrados. |
+| 10 | Qualidade | 0:45 | 105 testes, 94% de cobertura, 6 verificações no CI. |
+| 11 | Publicação | 0:45 | GitHub → CI → Vercel → Neon; os 3 limites da nuvem e como foram resolvidos. |
+| 12 | Limitações e próximos passos | 0:30 | OCR, login por usuário, preços integrados. |
+| 13 | Perguntas | 0:15 | Agradecer e abrir para perguntas. |
 | | **Total** | **10:00** | |
 
-Com mais de uma pessoa, uma divisão possível: **A** slides 1–4, **B** slides 5–6 e 9–10, **C** a demonstração (7–8) e 11–12.
+Com mais de uma pessoa, uma divisão possível: **A** slides 1–5, **B** slides 6–7 e 10–11, **C** a demonstração (8–9) e 12–13.
+
+**Sobre IA (slide 4), se a banca perguntar:** usamos um assistente de IA (Claude Code) para planejar,
+programar, testar, documentar e publicar, com revisão da equipe em cada etapa. O sistema em execução
+**não** usa IA: aplica regras fixas, auditáveis e explicáveis, o que importa numa prestação de contas
+pública. IA entraria depois em OCR de extratos escaneados e na sugestão de classificação, sempre com
+revisão humana.
 
 ## Demonstração ao vivo (2 minutos)
 
